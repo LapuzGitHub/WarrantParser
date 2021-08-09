@@ -3,6 +3,7 @@ import requests
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 from Warrant import Warrant
+from WarrantSet import WarrantSet
 
 def get_url(url):
     return requests.get(url)
@@ -11,7 +12,7 @@ def main():
 
     try:
 
-        underlying = 'CAC 40'
+        underlying = 'DAX'
         rootUrl = "https://www.boursorama.com"
         mainBaseUrl = f"{rootUrl}/bourse/produits-de-bourse/levier/warrants/resultats?warrant_filter%5BunderlyingType%5D=&warrant_filter%5BunderlyingName%5D%5B%5D={underlying}&warrant_filter%5Bdelta%5D%5B%5D=0&warrant_filter%5Bdelta%5D%5B%5D=100&warrant_filter%5Bsearch%5D="
 
@@ -34,7 +35,6 @@ def main():
         for response in responses:
 
             soup = BeautifulSoup(response.text, 'lxml')
-
             quotes = soup.find_all('tr', class_='c-table__row')
             quoteList = [quote.text.replace('\n', '') for quote in quotes]
  
@@ -45,45 +45,51 @@ def main():
                     print('Instrument instanciation exception', e)
 
             instrumentDetails = soup.find_all('a', class_='c-link c-link--animated / o-ellipsis', href=True)
-
             for instrument in instrumentDetails:
                 instrumentURLList.append(f"{rootUrl}{instrument['href']}")
  
-        for warrant in warrantList:
-            print(warrant)
-        print(len(warrantList))           
-
         with ThreadPoolExecutor() as pool:
             responses = list(pool.map(get_url, instrumentURLList))
+
+        warrantISINDictionary = {}
+        for warrant in warrantList:
+            if warrant.quoted() and warrant.ISIN:
+                warrantISINDictionary[warrant.ISIN] =  warrant
 
         for response in responses:
 
             try:
 
                 warrantISIN = response.url.split('/')[-1][3:]
+                if warrantISIN not in warrantISINDictionary: continue
 
                 soup = BeautifulSoup(response.text, 'lxml')
                 quotes = soup.find_all('li', class_='c-list-info__item')
                 quoteList = [quote.text for quote in quotes]
 
-                spot, quotity = None, None
+                spot = quotity = None
                 for quote in quoteList:
                     items = quote.replace('\n', '').split()
                     if items[0] == 'Spot': spot = float(items[1])
                     if items[0] == 'Parité': quotity = int(items[1])
 
-                for warrant in warrantList:
-                    if(warrant.ISIN == warrantISIN): 
-                        warrant.UnderlyingSpot = spot
-                        warrant.Quotity = quotity
+                warrant = warrantISINDictionary[warrantISIN]
+                warrant.underlyingSpot = spot
+                warrant.quotity = quotity
+                if quotity != None:
+                    if warrant.bid != None: warrant.quotityBid = round(quotity * warrant.bid, 2) 
+                    if warrant.ask != None: warrant.quotityAsk = round(quotity * warrant.ask, 2) 
 
             except:
 
                 pass
 
-        for warrant in warrantList:
-            print(warrant)
-        print(len(warrantList))           
+        warrantSet = WarrantSet()
+        for warrant in warrantISINDictionary.values():
+            warrantSet.add(warrant)
+        warrantSet.sort()
+        
+        j = 0
 
     except Exception as e:
         
