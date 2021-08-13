@@ -17,4 +17,4 @@ class WarrantSet:
 
     def sort(self):
 
-        self.warrantMaturitySet.sort()
+        return self.warrantMaturitySet.sort()

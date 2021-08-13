@@ -8,6 +8,16 @@ class WarrantStrikeSet:
         self.warrantStrikeDictionary = {}
 
 
+    def getDict(self):
+
+        return self.warrantStrikeDictionary.copy()
+
+
+    def getKeys(self):
+
+        return self.warrantStrikeDictionary.keys()
+
+
     def add(self, warrant):
 
         if not warrant.strike: return
