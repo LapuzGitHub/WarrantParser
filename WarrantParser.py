@@ -96,6 +96,7 @@ def main():
 
         j = 0
 
+
     except Exception as e:
         
         print('Global exception', e)
