@@ -94,7 +94,6 @@ def main():
         df = pd.DataFrame(globalWarrantDictionary)
         df.to_excel('OUTPUT.xlsx')
 
-
         j = 0
 
     except Exception as e:
