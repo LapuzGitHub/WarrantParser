@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 from Warrant import Warrant
 from WarrantSet import WarrantSet
 import pandas as pd
-import openpyxl
 
 def get_url(url):
     return requests.get(url)
@@ -93,8 +92,6 @@ def main():
 
         df = pd.DataFrame(globalWarrantDictionary)
         df.to_excel('OUTPUT.xlsx')
-
-        j = 0
 
     except Exception as e:
         
